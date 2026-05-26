@@ -9,7 +9,10 @@ from discord import app_commands
 from dotenv import load_dotenv
 load_dotenv()
 
-class Client(discord.Client):
+class Client(commands.Bot):
+    async def setup_hook(self):
+        await self.load_extension("commands.setup_logging_command")
+
     async def on_ready(self):
         print(f'\u2705 Successfully logined as {self.user}')
 
@@ -18,6 +21,8 @@ class Client(discord.Client):
             return
         
         print(f'Message from {message.author}: {message.content}')
+
+        await self.process_commands(message)
 
 intents = discord.Intents.default()
 intents.message_content = True
