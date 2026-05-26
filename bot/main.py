@@ -13,6 +13,9 @@ class Client(discord.Client):
         print(f'\u2705 Successfully logined as {self.user}')
 
     async def on_message(self, message):
+        if message.author == self.user:
+            return
+        
         print(f'Message from {message.author}: {message.content}')
 
 intents = discord.Intents.default()
