@@ -29,5 +29,5 @@ intents.message_content = True
 
 Discord_bot_token = os.getenv("DISCORD_TOKEN")
 
-client = Client(intents=intents)
+client = Client(command_prefix="!", intents=intents)
 client.run(Discord_bot_token)
