@@ -1,10 +1,8 @@
 # Import Discord bot libraries and load environment variables
 import discord 
-import asyncio
 import os 
 
 from discord.ext import commands
-from discord import app_commands
 from dotenv import load_dotenv
 from pathlib import Path
 load_dotenv()
@@ -27,7 +25,7 @@ class Client(commands.Bot):
           print(f"Synced {len(synced)}")
 
     async def on_ready(self):
-        print(f'\u2705 Successfully logined as {self.user}')
+        print(f'\u2705 Successfully logged in as {self.user}')
 
     async def on_message(self, message):
         if message.author == self.user:
