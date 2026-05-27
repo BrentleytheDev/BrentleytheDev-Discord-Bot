@@ -19,6 +19,7 @@ class Logging(commands.Cog):
 
     @app_commands.command(name="logging_channel", description="Set the general logging channel")
     async def logging_channel(self, interaction: discord.Interaction, channel: discord.TextChannel):
+        await interaction.response.defer(ephemeral=True)
         try:
             with open(CONFIG_PATH, 'r') as f:
                 data = json.load(f)
@@ -29,5 +30,13 @@ class Logging(commands.Cog):
 
                 with CONFIG_PATH.open("w", encoding="utf-8") as f:
                     json.dump(data, f, indent=2)
+
+                await interaction.followup.send(
+                    embed = discord.Embed(
+                        title="Logging channel configured",
+                        description=f"General server logs will be sent to {channel.mention}.",
+                        color=discord.Color.green()
+                    )
+                )
         except:
              print("Failed :(")
