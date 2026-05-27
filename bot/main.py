@@ -7,11 +7,23 @@ import os
 from discord.ext import commands
 from discord import app_commands
 from dotenv import load_dotenv
+from pathlib import Path
 load_dotenv()
 
 class Client(commands.Bot):
     async def setup_hook(self):
-        await self.load_extension("commands.setup_logging_command")
+          commands_dir = Path(__file__).resolve().parent / "commands"
+
+          for file in commands_dir.glob("*.py"):
+              if file.name.startswith("_") or file.name == "__init__.py":
+                  continue
+
+              extension_name = f"commands.{file.stem}"
+              await self.load_extension(extension_name)
+              print(f"Loaded extension: {extension_name}")
+
+          synced = await self.tree.sync()
+          print(f"Synced {len(synced)}")
 
     async def on_ready(self):
         print(f'\u2705 Successfully logined as {self.user}')
