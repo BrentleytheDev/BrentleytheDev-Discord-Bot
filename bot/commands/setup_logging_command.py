@@ -6,8 +6,8 @@ import json
 from discord.ext import commands 
 from discord import app_commands
 from pathlib import Path
-
-CONFIG_PATH = Path(__file__).resolve().parent.parent / "config" / "automod" / "config.json"
+from utils.log import setup_logging
+from utils.log import send_log
 
 async def setup(bot):
         await bot.add_cog(Logging(bot))
@@ -17,26 +17,47 @@ class Logging(commands.Cog):
         self.bot = bot
 
 
-    @app_commands.command(name="logging_channel", description="Set the general logging channel")
-    async def logging_channel(self, interaction: discord.Interaction, channel: discord.TextChannel):
+    @app_commands.command(name="logging_channel", description="Set a logging channel")
+    async def logging_channel(
+        self,
+        interaction,
+        general: discord.TextChannel,
+        bans: discord.TextChannel = None,
+        kicks: discord.TextChannel = None,
+        message_edits: discord.TextChannel = None,
+        delete_message: discord.TextChannel = None,
+        join_logging: discord.TextChannel = None
+    ):
         await interaction.response.defer(ephemeral=True)
+
+        fields = {
+            "general": (general, "general-server-logging"),
+            "bans": (bans, "ban-logging"),
+            "kicks": (kicks, "kick-logging"),
+            "message_edits": (message_edits, "message-edits"),
+            "delete_message": (delete_message, "delete-messages"),
+            "join_logging": (join_logging, "join-logging")
+        }
+
+        updated = {}
+
         try:
-            with open(CONFIG_PATH, 'r') as f:
-                data = json.load(f)
-                
-                if "logging" not in data:
-                    data["logging"] = {}
-                data["logging"]["general-server-logging"] = channel.id
+             for name, (channel, key) in fields.items():
+                 if channel:
+                       await setup_logging(key, channel.id)
+                       updated[name] = channel.mention
 
-                with CONFIG_PATH.open("w", encoding="utf-8") as f:
-                    json.dump(data, f, indent=2)
+             if not updated:
+                  await interaction.followup.send("You didn't provide any channels.")
+                  return
 
-                await interaction.followup.send(
-                    embed = discord.Embed(
+
+             await interaction.followup.send(
+                embed = discord.Embed(
                         title="Logging channel configured",
                         description=f"General server logs will be sent to {channel.mention}.",
                         color=discord.Color.green()
                     )
-                )
+             )
         except:
-             print("Failed :(")
+             print("Failed ❌")
