@@ -14,6 +14,7 @@ class Events(commands.Cog):
         print("Events cog loaded")
         print(f'\u2705 Successfully logged in as {self.user}')
 
+    # Log member joins
     @commands.Cog.listener()
     async def on_member_join(
         self,
@@ -36,6 +37,7 @@ class Events(commands.Cog):
         embed
        )
 
+    # Log edited messages
     @commands.Cog.listener()
     async def on_message_edit(
         self,
@@ -83,6 +85,7 @@ class Events(commands.Cog):
             embed 
         )
 
+    # Log message deletes
     @commands.Cog.listener()
     async def on_message_delete(
         self,
@@ -123,6 +126,8 @@ class Events(commands.Cog):
         self,
         member: discord.Member
     ):
+
+        # Logs kicks
         async for log in member.guild.audit_logs(
             limit=1,
             action=discord.AuditLogAction.kick
@@ -157,6 +162,7 @@ class Events(commands.Cog):
                        embed
                     )
 
+        # Logs bans
         async for log in member.guild.audit_logs(
                 limit=1,
                 action=discord.AuditLogAction.ban
