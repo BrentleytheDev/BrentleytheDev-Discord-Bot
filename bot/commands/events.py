@@ -12,6 +12,7 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         print("Events cog loaded")
+        print(f'\u2705 Successfully logged in as {self.user}')
 
     @commands.Cog.listener()
     async def on_member_join(
@@ -117,17 +118,78 @@ class Events(commands.Cog):
             embed
         )
 
-    async def on_ready(self):
-        print(f'\u2705 Successfully logged in as {self.user}')
+    @commands.Cog.listener()
+    async def on_member_remove(
+        self,
+        member: discord.Member
+    ):
+        async for log in member.guild.audit_logs(
+            limit=1,
+            action=discord.AuditLogAction.kick
+        ):
 
-    async def on_message(self, message):
-        if message.author == self.user:
-            return
-        
-        print(f'Message from {message.author}: {message.content}')
+                    if log.target.id == member.id:
 
-        # Allow commands to work inside on_message
-        await self.process_commands(message)
+                          reason = log.reason or "No reason provided"
+
+                          embed = discord.Embed(
+                          title="Member Kicked",
+                          color=discord.Color.red()
+                    )
+
+                          embed.add_field(
+                          name="User",
+                          value=member.mention,
+                          inline=False
+                    )
+
+                          embed.set_footer(
+                          text=f"Reason: {reason}"
+                    )
+
+                          embed.set_thumbnail(
+                          url=member.display_avatar.url
+                    )
+
+                    await send_log(
+                       member.guild,
+                      "kick-logging",
+                       embed
+                    )
+
+        async for log in member.guild.audit_logs(
+                limit=1,
+                action=discord.AuditLogAction.ban
+            ):
+
+               if log.target.id == member.id:
+
+                reason = log.reason or "No reason provided"
+
+                embed = discord.Embed(
+                    title="Member Banned",
+                    color=discord.Color.red()
+                )
+
+                embed.add_field(
+                    name="User",
+                    value=member.mention,
+                    inline=False
+                )
+
+                embed.set_footer(
+                    text=f"Reason {reason}"
+                )
+
+                embed.set_thumbnail(
+                    url=member.display_avatar.url
+                )
+
+                await send_log(
+                    member.guild,
+                    "ban-logging",
+                    embed
+                )
 
 async def setup(bot):
     await bot.add_cog(Events(bot))

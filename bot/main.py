@@ -24,21 +24,11 @@ class Client(commands.Bot):
           synced = await self.tree.sync()
           print(f"Synced {len(synced)}")
 
-    async def on_ready(self):
-        print(f'\u2705 Successfully logged in as {self.user}')
-
-    async def on_message(self, message):
-        if message.author == self.user:
-            return
-        
-        print(f'Message from {message.author}: {message.content}')
-
-        # Allow commands to work inside on_message
-        await self.process_commands(message)
 
 intents = discord.Intents.default()
 # We enabled message_content so Discord bot can use messages
 intents.message_content = True
+intents.members = True
 
 # Load bot token from environment variables
 Discord_bot_token = os.getenv("DISCORD_TOKEN")
