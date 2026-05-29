@@ -1,18 +1,19 @@
-import discord 
+import discord
 
-from discord.ext import commands 
+from discord.ext import commands
 
-from utils.log import send_log 
+from utils.log import send_log
+
 
 class Events(commands.Cog):
 
     def __init__(self, bot):
-        self.bot = bot 
+        self.bot = bot
 
     @commands.Cog.listener()
     async def on_ready(self):
         print("Events cog loaded")
-        print(f'\u2705 Successfully logged in as {self.user}')
+        print(f"✅ Successfully logged in as {self.bot.user}")
 
     # Log member joins
     @commands.Cog.listener()
@@ -21,36 +22,37 @@ class Events(commands.Cog):
         member: discord.Member
     ):
 
-       embed = discord.Embed(
-        title="👋 Member Joined",
-        description=f"{member.mention} joined the server.",
-        color=discord.Color.green()
-       )
+        embed = discord.Embed(
+            title="👋 Member Joined",
+            description=f"{member.mention} joined the server.",
+            color=discord.Color.green()
+        )
 
-       embed.set_thumbnail(
-        url=member.display_avatar.url
-       )
+        embed.set_thumbnail(
+            url=member.display_avatar.url
+        )
 
-       await send_log(
-        member.guild,
-        "join-logging",
-        embed
-       )
+        await send_log(
+            member.guild,
+            "join-logging",
+            embed
+        )
 
     # Log edited messages
     @commands.Cog.listener()
     async def on_message_edit(
         self,
         before: discord.Message,
-        after: discord.Message 
+        after: discord.Message
     ):
+
         print("Message edit event fired")
 
         if before.author.bot:
-            return 
+            return
 
         if before.content == after.content:
-            return 
+            return
 
         embed = discord.Embed(
             title="✏️ Message Edited",
@@ -82,20 +84,21 @@ class Events(commands.Cog):
         await send_log(
             before.guild,
             "message-edits",
-            embed 
+            embed
         )
 
-    # Log message deletes
+    # Log deleted messages
     @commands.Cog.listener()
     async def on_message_delete(
         self,
         message: discord.Message
     ):
+
         if message.author.bot:
             return
 
         embed = discord.Embed(
-            title="Message Deleted",
+            title="🗑️ Message Deleted",
             color=discord.Color.red()
         )
 
@@ -121,59 +124,25 @@ class Events(commands.Cog):
             embed
         )
 
+    # Log kicks and bans
     @commands.Cog.listener()
     async def on_member_remove(
         self,
         member: discord.Member
     ):
 
-        # Logs kicks
+        # Log kicks
         async for log in member.guild.audit_logs(
             limit=1,
             action=discord.AuditLogAction.kick
         ):
 
-                    if log.target.id == member.id:
-
-                          reason = log.reason or "No reason provided"
-
-                          embed = discord.Embed(
-                          title="Member Kicked",
-                          color=discord.Color.red()
-                    )
-
-                          embed.add_field(
-                          name="User",
-                          value=member.mention,
-                          inline=False
-                    )
-
-                          embed.set_footer(
-                          text=f"Reason: {reason}"
-                    )
-
-                          embed.set_thumbnail(
-                          url=member.display_avatar.url
-                    )
-
-                    await send_log(
-                       member.guild,
-                      "kick-logging",
-                       embed
-                    )
-
-        # Logs bans
-        async for log in member.guild.audit_logs(
-                limit=1,
-                action=discord.AuditLogAction.ban
-            ):
-
-               if log.target.id == member.id:
+            if log.target.id == member.id:
 
                 reason = log.reason or "No reason provided"
 
                 embed = discord.Embed(
-                    title="Member Banned",
+                    title="👢 Member Kicked",
                     color=discord.Color.red()
                 )
 
@@ -184,7 +153,42 @@ class Events(commands.Cog):
                 )
 
                 embed.set_footer(
-                    text=f"Reason {reason}"
+                    text=f"Reason: {reason}"
+                )
+
+                embed.set_thumbnail(
+                    url=member.display_avatar.url
+                )
+
+                await send_log(
+                    member.guild,
+                    "kick-logging",
+                    embed
+                )
+
+        # Log bans
+        async for log in member.guild.audit_logs(
+            limit=1,
+            action=discord.AuditLogAction.ban
+        ):
+
+            if log.target.id == member.id:
+
+                reason = log.reason or "No reason provided"
+
+                embed = discord.Embed(
+                    title="🔨 Member Banned",
+                    color=discord.Color.red()
+                )
+
+                embed.add_field(
+                    name="User",
+                    value=member.mention,
+                    inline=False
+                )
+
+                embed.set_footer(
+                    text=f"Reason: {reason}"
                 )
 
                 embed.set_thumbnail(
@@ -196,6 +200,51 @@ class Events(commands.Cog):
                     "ban-logging",
                     embed
                 )
+
+    # Log reactions
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(
+        self,
+        payload: discord.RawReactionActionEvent
+    ):
+
+        guild = self.bot.get_guild(payload.guild_id)
+
+        if guild is None:
+            return
+
+        member = guild.get_member(payload.user_id)
+
+        if member is None:
+            return
+
+        channel = guild.get_channel(payload.channel_id)
+
+        if channel is None:
+            return
+
+        message = await channel.fetch_message(payload.message_id)
+
+        embed = discord.Embed(
+            title="😀 Reaction Added",
+            description=(
+                f"{member.mention} reacted to "
+                f"[{message.content or 'Message'}]({message.jump_url}) "
+                f"with {payload.emoji} in {channel.mention}"
+            ),
+            color=discord.Color.blurple()
+        )
+
+        embed.set_thumbnail(
+            url=member.display_avatar.url
+        )
+
+        await send_log(
+            guild,
+            "reaction-add",
+            embed
+        )
+
 
 async def setup(bot):
     await bot.add_cog(Events(bot))

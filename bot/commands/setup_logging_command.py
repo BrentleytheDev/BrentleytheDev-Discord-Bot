@@ -26,7 +26,8 @@ class Logging(commands.Cog):
         kicks: discord.TextChannel = None,
         message_edits: discord.TextChannel = None,
         delete_message: discord.TextChannel = None,
-        join_logging: discord.TextChannel = None
+        join_logging: discord.TextChannel = None,
+        react_message: discord.TextChannel = None
     ):
         await interaction.response.defer(ephemeral=True)
 
@@ -36,7 +37,8 @@ class Logging(commands.Cog):
             "kicks": (kicks, "kick-logging"),
             "message_edits": (message_edits, "message-edits"),
             "delete_message": (delete_message, "delete-messages"),
-            "join_logging": (join_logging, "join-logging")
+            "join_logging": (join_logging, "join-logging"),
+            "react_message": (react_message, "react-message")
         }
 
         updated = {}
