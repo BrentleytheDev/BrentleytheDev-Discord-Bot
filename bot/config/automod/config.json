@@ -1,5 +1,18 @@
 {
+  "bad-words": [
+    "fuck",
+    "shit",
+    "kill yourself",
+    "retard"
+  ],
   "logging": {
-    "general-server-logging": 1508498008168337601
+    "general-server-logging": 1509285789555622068,
+    "ban-logging": 1509285789555622068,
+    "kick-logging": 1509285789555622068,
+    "message-edits": 1509285789555622068,
+    "delete-messages": 1509285789555622068,
+    "join-logging": 1509285789555622068,
+    "react-message": 1509285789555622068,
+    "bad-word-logging": 1509285789555622068
   }
 }
