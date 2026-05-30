@@ -3,7 +3,8 @@ import discord
 from discord.ext import commands
 
 from utils.log import send_log
-
+from utils.log import CONFIG_PATH
+import json
 
 class Events(commands.Cog):
 
@@ -81,6 +82,12 @@ class Events(commands.Cog):
             text=f"User ID: {before.author.id}"
         )
 
+        embed.add_field(
+          name="Message Link",
+          value=f"[Jump to Message]({before.jump_url})",
+          inline=False
+        )
+
         await send_log(
             before.guild,
             "message-edits",
@@ -116,6 +123,12 @@ class Events(commands.Cog):
 
         embed.set_footer(
             text=f"User ID: {message.author.id}"
+        )
+
+        embed.add_field(
+            name="Message Link",
+            value=f"[Jump to Message]({message.jump_url})",
+            inline=False
         )
 
         await send_log(
@@ -244,6 +257,75 @@ class Events(commands.Cog):
             "reaction-add",
             embed
         )
+
+    @commands.Cog.listener()
+    async def on_message(
+        self,
+        message: discord.Message
+    ):
+        if message.author.bot:
+            return
+
+        with open(CONFIG_PATH, "r") as file:
+            config = json.load(file)
+
+        bad_words = config.get("bad-words", [])
+
+        message_content = message.content.lower()
+
+        for word in bad_words:
+
+            if word.lower() in message_content:
+
+             embed = discord.Embed(
+             title="🚫 Bad Word Detected",
+             color=discord.Color.red()
+            )
+
+             embed.add_field(
+             name="User",
+             value=message.author.mention,
+             inline=False
+            )
+
+             embed.add_field(
+             name="Channel",
+             value=message.channel.mention,
+             inline=False
+            )
+
+             embed.add_field(
+             name="Message",
+             value=message.content,
+             inline=False
+            )
+
+             embed.add_field(
+             name="Message Link",
+             value=f"[Jump to Message]({message.jump_url})",
+             inline=False
+            )
+
+             await send_log(
+             message.guild,
+             "delete-messages",
+             embed
+            )
+
+            await message.delete()
+
+            try:
+                await message.author.send(
+                      f"Your message was deleted because it contained a banned word!"
+                    )
+                
+            except discord.Forbidden:
+                    await message.channel.send(
+                        f"{message.author.mention}, your message was deleted because it contained a banned word",
+                        delete_after=5
+                    )
+
+            return
 
 
 async def setup(bot):
