@@ -258,6 +258,7 @@ class Events(commands.Cog):
             embed
         )
 
+    #Log bad words
     @commands.Cog.listener()
     async def on_message(
         self,
@@ -278,38 +279,38 @@ class Events(commands.Cog):
             if word.lower() in message_content:
 
              embed = discord.Embed(
-             title="🚫 Bad Word Detected",
-             color=discord.Color.red()
+                title="🚫 Bad Word Detected",
+                color=discord.Color.red()
             )
 
              embed.add_field(
-             name="User",
-             value=message.author.mention,
-             inline=False
+                name="User",
+                value=message.author.mention,
+                inline=False
             )
 
              embed.add_field(
-             name="Channel",
-             value=message.channel.mention,
-             inline=False
+                name="Channel",
+                value=message.channel.mention,
+                inline=False
             )
 
              embed.add_field(
-             name="Message",
-             value=message.content,
-             inline=False
+                name="Message",
+                value=message.content,
+                inline=False
             )
 
              embed.add_field(
-             name="Message Link",
-             value=f"[Jump to Message]({message.jump_url})",
-             inline=False
+                name="Message Link",
+                value=f"[Jump to Message]({message.jump_url})",
+                inline=False
             )
 
              await send_log(
-             message.guild,
-             "delete-messages",
-             embed
+               message.guild,
+               "bad-word-logging",
+               embed
             )
 
             await message.delete()

@@ -29,7 +29,8 @@ class Logging(commands.Cog):
         message_edits: discord.TextChannel = None,
         delete_message: discord.TextChannel = None,
         join_logging: discord.TextChannel = None,
-        react_message: discord.TextChannel = None
+        react_message: discord.TextChannel = None,
+        bad_word_logging: discord.TextChannel = None
     ):
         await interaction.response.defer(ephemeral=True)
 
@@ -40,7 +41,8 @@ class Logging(commands.Cog):
             "message_edits": (message_edits, "message-edits"),
             "delete_message": (delete_message, "delete-messages"),
             "join_logging": (join_logging, "join-logging"),
-            "react_message": (react_message, "react-message")
+            "react_message": (react_message, "react-message"),
+            "bad_word_logging": (bad_word_logging, "bad-word-logging")
         }
 
         updated = {}
