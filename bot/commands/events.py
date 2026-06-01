@@ -1,10 +1,14 @@
 import discord
+import json
 
 from discord.ext import commands
 
 from utils.log import send_log
 from utils.log import CONFIG_PATH
-import json
+from utils.nsfw_detector import (
+    nsfw_detect,
+    clear_message_cache
+)
 
 class Events(commands.Cog):
 
@@ -49,10 +53,18 @@ class Events(commands.Cog):
 
         print("Message edit event fired")
 
-        if before.author.bot:
+        if after.author.bot:
             return
 
-        if before.content == after.content:
+        if (
+            before.content == after.content
+            and before.attachments == after.attachments
+        ):
+            return
+
+        clear_message_cache(after.id)
+
+        if await nsfw_detect(after):
             return
 
         embed = discord.Embed(
@@ -83,9 +95,9 @@ class Events(commands.Cog):
         )
 
         embed.add_field(
-          name="Message Link",
-          value=f"[Jump to Message]({before.jump_url})",
-          inline=False
+            name="Message Link",
+            value=f"[Jump to Message]({before.jump_url})",
+            inline=False
         )
 
         await send_log(
@@ -267,6 +279,9 @@ class Events(commands.Cog):
         if message.author.bot:
             return
 
+        if await nsfw_detect(message):
+            return
+
         with open(CONFIG_PATH, "r") as file:
             config = json.load(file)
 
@@ -276,57 +291,56 @@ class Events(commands.Cog):
 
         for word in bad_words:
 
-           if word.lower() in message_content:
+            if word.lower() in message_content:
 
-            embed = discord.Embed(
-              title="🚫 Bad Word Detected",
-              color=discord.Color.red()
-            )
+                embed = discord.Embed(
+                    title="🚫 Bad Word Detected",
+                    color=discord.Color.red()
+                )
 
-            embed.add_field(
-               name="User",
-               value=message.author.mention,
-               inline=False
-            )
+                embed.add_field(
+                    name="User",
+                    value=message.author.mention,
+                    inline=False
+                )
 
-            embed.add_field(
-               name="Channel",
-               value=message.channel.mention,
-               inline=False
-            )
+                embed.add_field(
+                    name="Channel",
+                    value=message.channel.mention,
+                    inline=False
+                )
 
-            embed.add_field(
-               name="Message",
-               value=message.content,
-               inline=False
-            )
+                embed.add_field(
+                    name="Message",
+                    value=message.content,
+                    inline=False
+                )
 
-            embed.add_field(
-               name="Message Link",
-               value=f"[Jump to Message]({message.jump_url})",
-               inline=False
-            )
+                embed.add_field(
+                    name="Message Link",
+                    value=f"[Jump to Message]({message.jump_url})",
+                    inline=False
+                )
 
-            await send_log(
-               message.guild,
-               "bad-word-logging",
-               embed
-            )
+                await send_log(
+                    message.guild,
+                    "bad-word-logging",
+                    embed
+                )
 
-            await message.delete()
+                await message.delete()
 
-            try:
-                await message.author.send(
-                  "Your message was deleted because it contained a banned word!"
-            )
+                try:
+                    await message.author.send(
+                        "Your message was deleted because it contained a banned word!"
+                    )
+                except discord.Forbidden:
+                    await message.channel.send(
+                        f"{message.author.mention}, your message was deleted because it contained a banned word",
+                        delete_after=5
+                    )
 
-            except discord.Forbidden:
-                await message.channel.send(
-                f"{message.author.mention}, your message was deleted because it contained a banned word",
-                delete_after=5
-            )
-
-            return
+                return
 
 
 async def setup(bot):

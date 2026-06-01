@@ -1,2 +1,9 @@
 discord.py==2.6.0
 python-dotenv==1.1.1
+aiohttp
+ImageHash
+nudenet
+opencv-python
+Pillow
+transformers
+torch
