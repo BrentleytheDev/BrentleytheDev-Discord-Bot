@@ -18,10 +18,14 @@ from transformers import pipeline
 detector = NudeDetector()
 
 URL_REGEX = re.compile(r"https?://[^\s<>()]+", re.IGNORECASE)
+# Prevent the same Discord message from being scanned more than once.
 PROCESSED_MESSAGE_IDS = set()
+# SHA-256 only skips exact duplicate frames that were already scanned.
 PROCESSED_IMAGE_DIGESTS = set()
+# Use perceptual hashes so slightly resized/recompressed NSFW images can still match.
 NSFW_IMAGE_HASHES = set()
 
+# Prevent huge files from slowing the bot down or using too much memory.
 MAX_DOWNLOAD_BYTES = 50 * 1024 * 1024
 VIDEO_FRAME_COUNT = 12
 IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".webp", ".gif")
@@ -54,7 +58,7 @@ anime_nsfw_classifier = pipeline(
     model="prithivMLmods/Mature-Content-Detection"
 )
 
-def is_anime_nsfw(image_path: str) -> bool:
+def is_mature_content(image_path: str) -> bool:
     results = anime_nsfw_classifier(image_path)
 
     for result in results:
@@ -72,9 +76,11 @@ def is_anime_nsfw(image_path: str) -> bool:
 
     return False
 
+# Removes one message from the cache so it can be scanned again if needed.
 def clear_message_cache(message_id: int):
     PROCESSED_MESSAGE_IDS.discard(message_id)
 
+# Creates a perceptual hash so similar-looking images can be compared.
 def get_image_hash(data: bytes)-> str:
 
     img = Image.open(io.BytesIO(data)).convert("RGB")
@@ -83,6 +89,7 @@ def get_image_hash(data: bytes)-> str:
 def get_image_digest(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
+# Limit GIF scanning so long animations do not slow moderation down.
 def extract_gif_frames(data: bytes, max_frames: int = 20):
     img = Image.open(io.BytesIO(data))
 
@@ -106,6 +113,7 @@ def extract_gif_frames(data: bytes, max_frames: int = 20):
 
     return frames
 
+# Sample video frames instead of scanning the whole video to keep CPU usage low.
 def extract_video_frames(data: bytes, max_frames: int = VIDEO_FRAME_COUNT):
     video = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
     video.write(data)
@@ -113,6 +121,7 @@ def extract_video_frames(data: bytes, max_frames: int = VIDEO_FRAME_COUNT):
 
     frames = []
 
+    # Captures frames from the video
     try:
         cap = cv2.VideoCapture(video.name)
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -144,6 +153,7 @@ def extract_video_frames(data: bytes, max_frames: int = VIDEO_FRAME_COUNT):
 
     return frames
 
+# Extract urls from preview to check for nsfw
 def extract_preview_urls(html: str):
     parser = PreviewMetaParser()
     parser.feed(html)
@@ -153,7 +163,8 @@ def extract_preview_urls(html: str):
         for url in parser.urls
     ]
 
-def is_nsfw(results) -> bool:
+# Uses a second model to check for nsfw
+def is_nudenet_nsfw(results) -> bool:
     NSFW_KEYWORDS = [
         "breast",
         "genital",
@@ -166,6 +177,7 @@ def is_nsfw(results) -> bool:
     strong_hits = 0
     max_score = 0.0
 
+    # Loop results for type of nsfw and score
     for result in results:
         label = result["class"].lower()
         score = result["score"]
@@ -176,10 +188,11 @@ def is_nsfw(results) -> bool:
             keyword in label
             for keyword in NSFW_KEYWORDS
         ):
-          strong_hits += 1
+            strong_hits += 1
 
     return strong_hits >= 1 or max_score >= 0.70
 
+# Gets url and downloads it for any nsfw
 async def download_url(session, url: str):
     async with session.get(url, timeout=10) as resp:
         if resp.status != 200:
@@ -187,9 +200,13 @@ async def download_url(session, url: str):
 
         content_length = resp.headers.get("Content-Length")
 
-        if content_length and int(content_length) > MAX_DOWNLOAD_BYTES:
-            print(f"Skipping large media: {url}")
-            return None, None
+        if content_length:
+            try:
+                if int(content_length) > MAX_DOWNLOAD_BYTES:
+                    print(f"Skipping large media: {url}")
+                    return None, None
+            except ValueError:
+                pass
 
         data = await resp.read()
 
@@ -215,6 +232,7 @@ async def resolve_target_media(session, url: str):
     if content_type.startswith("video/") or clean_url.endswith(VIDEO_EXTENSIONS):
         return [(url, data, content_type)]
 
+    # Webpage links can hide media in preview metadata, so scan those images/videos too.
     if "html" in content_type:
         html = data.decode("utf-8", errors="ignore")
         media = []
@@ -224,6 +242,7 @@ async def resolve_target_media(session, url: str):
             preview_data, preview_type = await download_url(session, preview_url)
             clean_preview_url = preview_url.lower().split("?")[0]
 
+            # Checks if preview data is a image or video then append the url and data and type.
             if preview_data and (
                 preview_type.startswith("image/")
                 or preview_type.startswith("video/")
@@ -236,6 +255,7 @@ async def resolve_target_media(session, url: str):
 
     return []
 
+# Makes a nsfw detect embed for logging
 async def remove_nsfw_message(message: discord.Message, source_type: str):
     embed = discord.Embed(
         title="🔞 Adult Content Detected",
@@ -275,6 +295,7 @@ async def remove_nsfw_message(message: discord.Message, source_type: str):
     except discord.Forbidden:
         pass
 
+# Writes the frame to a temp file because both ML detectors expect a file path.
 async def scan_frame(frame: bytes):
     temp = tempfile.NamedTemporaryFile(delete=False, suffix=".jpg")
     temp.write(frame)
@@ -285,12 +306,13 @@ async def scan_frame(frame: bytes):
         print(f"Scanning: {temp.name}")
         print(f"Results: {results}")
 
-        return is_nsfw(results) or is_anime_nsfw(temp.name)
+        return is_nudenet_nsfw(results) or is_mature_content(temp.name)
 
     finally:
         if os.path.exists(temp.name):
             os.remove(temp.name)
 
+# Main moderation entry point: scan for nsfw
 async def nsfw_detect(message: discord.Message) -> bool:
     print(f"NSFW scan triggered for message {message.id}")
 
