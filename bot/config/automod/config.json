@@ -6,14 +6,19 @@
     "retard"
   ],
   "logging": {
-    "general-server-logging": 1509285789555622068,
-    "ban-logging": 1509285789555622068,
-    "kick-logging": 1509285789555622068,
-    "message-edits": 1509285789555622068,
-    "delete-messages": 1509285789555622068,
-    "join-logging": 1509285789555622068,
-    "react-message": 1509285789555622068,
-    "bad-word-logging": 1509285789555622068,
-    "adult-content-logging": 1509285789555622068
+    "general-server-logging": 1511197263324778526,
+    "ban-logging": 1511197263324778526,
+    "kick-logging": 1511197263324778526,
+    "message-edits": 1511197263324778526,
+    "delete-messages": 1511197263324778526,
+    "join-logging": 1511197263324778526,
+    "react-message": 1511197263324778526,
+    "bad-word-logging": 1511197263324778526,
+    "adult-content-logging": 1511197263324778526
+  },
+  "announcement": {
+    "channel_id": 1511225942276571146,
+    "ping_role_id": 1511226016008372265,
+    "embed_color": "#57F287"
   }
 }

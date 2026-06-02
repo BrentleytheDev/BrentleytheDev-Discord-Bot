@@ -65,7 +65,7 @@ def is_mature_content(image_path: str) -> bool:
         label = result["label"].lower().strip()
         score = result["score"]
 
-        if label == "hentai" and score >= 0.45:
+        if label == "hentai" and score >= 0.60:
             return True 
 
         if label == "pornography" and score >= 0.60:
@@ -90,7 +90,7 @@ def get_image_digest(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 # Limit GIF scanning so long animations do not slow moderation down.
-def extract_gif_frames(data: bytes, max_frames: int = 20):
+def extract_gif_frames(data: bytes, max_frames: int = 8):
     img = Image.open(io.BytesIO(data))
 
     frames = []
@@ -163,16 +163,16 @@ def extract_preview_urls(html: str):
         for url in parser.urls
     ]
 
+NSFW_CLASSES = {
+    "EXPOSED_BREAST_F",
+    "EXPOSED_GENITALIA_F",
+    "EXPOSED_GENITALIA_M",
+    "EXPOSED_BUTTOCKS",
+    "EXPOSED_ANUS"
+}
+
 # Uses a second model to check for nsfw
 def is_nudenet_nsfw(results) -> bool:
-    NSFW_KEYWORDS = [
-        "breast",
-        "genital",
-        "anus",
-        "buttock",
-        "penis",
-        "vagina"
-    ]
 
     strong_hits = 0
     max_score = 0.0
@@ -184,13 +184,13 @@ def is_nudenet_nsfw(results) -> bool:
 
         max_score = max(max_score, score)
 
-        if score >= 0.55 and any(
+        if score >= 0.75 and any(
             keyword in label
             for keyword in NSFW_KEYWORDS
         ):
             strong_hits += 1
 
-    return strong_hits >= 1 or max_score >= 0.70
+    return strong_hits >= 1 or max_score >= 0.90
 
 # Gets url and downloads it for any nsfw
 async def download_url(session, url: str):
@@ -306,7 +306,10 @@ async def scan_frame(frame: bytes):
         print(f"Scanning: {temp.name}")
         print(f"Results: {results}")
 
-        return is_nudenet_nsfw(results) or is_mature_content(temp.name)
+        nudenet_result = is_nudenet_nsfw(results)
+        anime_result = is_mature_content(temp.name)
+
+        return nudenet_result and anime_result
 
     finally:
         if os.path.exists(temp.name):
