@@ -1,31 +1,44 @@
 # Import Discord bot libraries and load environment variables
-import discord 
-import os 
+import discord
+import os
 
 from discord.ext import commands
 from dotenv import load_dotenv
 from pathlib import Path
+
 load_dotenv()
+
 
 # Creates a class called Client to initialize our bot
 class Client(commands.Bot):
     async def setup_hook(self):
-          commands_dir = Path(__file__).resolve().parent / "commands"
-          
-          # Looks in commands directory and skips loading __init__.py or _ files
-          for file in commands_dir.glob("*.py"):
-              if file.name.startswith("_") or file.name == "__init__.py":
-                  continue
+        commands_dir = Path(__file__).resolve().parent / "commands"
 
-              extension_name = f"commands.{file.stem}"
-              await self.load_extension(extension_name)
-              print(f"Loaded extension: {extension_name}")
+        # Looks in commands directory and skips loading __init__.py or _ files
+        for file in commands_dir.rglob("*.py"):
+            if file.name.startswith("_") or file.name == "__init__.py":
+                continue
 
-          synced = await self.tree.sync()
-          print(f"Synced {len(synced)}")
+            relative = file.relative_to(commands_dir)
+
+            extension_name = (
+                "commands."
+                + ".".join(relative.with_suffix("").parts)
+            )
+
+            print(f"Trying to load: {extension_name}")
+
+            await self.load_extension(extension_name)
+
+        synced = await self.tree.sync()
+
+        print(f"Synced {len(synced)} commands")
+        for cmd in synced:
+            print(f"- {cmd.name}")
 
 
 intents = discord.Intents.default()
+
 # We enabled message_content so Discord bot can use messages
 intents.message_content = True
 intents.members = True
