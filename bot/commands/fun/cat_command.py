@@ -1,5 +1,6 @@
 import discord
 import aiohttp
+import time
 from discord.ext import commands
 from discord import app_commands
 
@@ -9,39 +10,10 @@ class cat_command(commands.Cog):
 
     @app_commands.command(name="cat", description="A fun command that gets a random cat!")
     async def cat(self, interaction: discord.Interaction):
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                "https://api.thecatapi.com/v1/images/search?has_breeds=1"
-            ) as resp:
-                data = await resp.json()
 
-        cat = data[0]
-        image_url = cat["url"]
-
+        image_url = f"https://cataas.com/cat?width=380&height=520&t={int(time.time())}"
+        
         embed = discord.Embed(title="🐱 Random Cat")
-
-        if cat.get("breeds"):
-            breed = cat["breeds"][0]
-
-            embed.add_field(
-                name="Breed",
-                value=breed.get("name", "Unknown"),
-                inline=False
-            )
-
-            if breed.get("temperament"):
-                embed.add_field(
-                    name="temperament",
-                    value=breed["temperament"][:1024],
-                    inline=False
-                )
-
-        else:
-            embed.add_field(
-                name="Breed",
-                value="Unknown",
-                inline=False
-            )
 
         embed.set_image(url=image_url)
 
