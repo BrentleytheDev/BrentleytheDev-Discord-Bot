@@ -4,7 +4,7 @@ import re
 from discord.ext import commands
 from discord import app_commands
 
-from utils.log import CONFIG_PATH
+from utils.config import load_config
 
 EMOJI_REGEX = re.compile(r"<a?:\w+:(\d+)>")
 
@@ -12,13 +12,7 @@ class Announcement(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    def load_config(self):
-        try:
-            with CONFIG_PATH.open("r", encoding="utf-8") as f:
-                return json.load(f)
-
-        except (FileNotFoundError, json.JSONDecodeError):
-            return {}
+    await open_config()
 
     def get_color(self, name: str):
         colors = {

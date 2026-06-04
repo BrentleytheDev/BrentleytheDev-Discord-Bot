@@ -11,7 +11,6 @@ from html.parser import HTMLParser
 from urllib.parse import urljoin
 
 from nudenet import NudeDetector
-from utils.log import send_log
 from PIL import Image
 from transformers import pipeline
 
@@ -317,6 +316,7 @@ async def scan_frame(frame: bytes):
 
 # Main moderation entry point: scan for nsfw
 async def nsfw_detect(message: discord.Message) -> bool:
+    from utils.log import send_log
     print(f"NSFW scan triggered for message {message.id}")
 
     if message.author.bot:

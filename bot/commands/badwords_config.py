@@ -8,7 +8,7 @@ from discord import app_commands
 from pathlib import Path
 from utils.log import setup_logging
 from utils.log import send_log
-from utils.log import CONFIG_PATH
+from utils.config import CONFIG_PATH
 
 class BadWordsConfig(commands.Cog):
 

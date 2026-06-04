@@ -8,8 +8,7 @@ from discord import app_commands
 from pathlib import Path
 from utils.log import setup_logging
 from utils.log import send_log
-
-CONFIG_PATH = Path(__file__).resolve().parent.parent / "config" / "automod" / "config.json"
+from utils.log import CONFIG_PATH
 
 async def setup(bot):
         await bot.add_cog(Logging(bot))
