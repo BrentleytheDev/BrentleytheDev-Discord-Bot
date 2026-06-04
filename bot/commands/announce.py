@@ -4,15 +4,13 @@ import re
 from discord.ext import commands
 from discord import app_commands
 
-from utils.config import load_config
+from utils.config import open_config
 
 EMOJI_REGEX = re.compile(r"<a?:\w+:(\d+)>")
 
 class Announcement(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
-    await open_config()
 
     def get_color(self, name: str):
         colors = {
@@ -34,10 +32,10 @@ class Announcement(commands.Cog):
         thumbnail: str | None = None,
         banner : str | None = None
     ):
-        config = self.load_config()
+        config = await open_config()
         ann = config.get("announcement", {})
 
-        channel_id = ann.get("channel_id")
+        channel_id = int(ann.get("channel_id"))
         if not channel_id:
             return await interaction.response.send_message(
                 "No announcement channel set in config.json",

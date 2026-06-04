@@ -308,7 +308,7 @@ async def scan_frame(frame: bytes):
         nudenet_result = is_nudenet_nsfw(results)
         anime_result = is_mature_content(temp.name)
 
-        return nudenet_result and anime_result
+        return nudenet_result or anime_result
 
     finally:
         if os.path.exists(temp.name):
