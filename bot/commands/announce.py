@@ -5,6 +5,7 @@ from discord.ext import commands
 from discord import app_commands
 
 from utils.config import open_config
+from utils.checks import has_any_permission_role
 
 EMOJI_REGEX = re.compile(r"<a?:\w+:(\d+)>")
 
@@ -23,6 +24,7 @@ class Announcement(commands.Cog):
         }
         return colors.get(name.lower(), discord.Color.blurple())
 
+    @has_any_permission_role()
     @app_commands.command(name="announce", description="Make an announcement!")
     async def announce(
         self,
